@@ -6,13 +6,17 @@ Arato is a platform for testing, experimenting, and evaluating LLM-based applica
 
 ## Installation
 
-To install the SDK, navigate to the root directory of this project (where `pyproject.toml` is located) and run:
+Install the SDK from PyPI using pip:
+
+```bash
+pip install arato-client
+```
+
+Or, to install from source, navigate to the root directory of this project (where `pyproject.toml` is located) and run:
 
 ```bash
 pip install .
 ```
-
-This will install the SDK and its dependencies in your current Python environment.
 
 ## Usage
 
