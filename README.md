@@ -22,6 +22,8 @@ pip install .
 
 First, ensure you have your Arato API key. You can pass it directly to the client or set it as an environment variable named `ARATO_API_KEY`.
 
+You can generate a new API key [here](https://app.arato.ai/settings/token_management)
+
 ### Synchronous Client
 
 ```python
@@ -76,4 +78,5 @@ if __name__ == "__main__":
         print("Please set the ARATO_API_KEY environment variable.")
 ```
 
-See `example.py` for a more detailed demonstration of the SDK's capabilities.
+### More Examples
+See the [examples](/examples) folder for more detailed demonstration of the SDK's capabilities.
