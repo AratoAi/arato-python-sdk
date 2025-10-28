@@ -1,0 +1,1960 @@
+openapi: 3.0.3
+info:
+  title: Arato SDK API
+  description: |
+    The Arato SDK API provides programmatic access to notebooks, datasets, and experiments.
+    
+    ## Authentication
+    All API requests require an API key. Include your API key in the `Authorization` header:
+    ```
+    Authorization: Bearer your-api-key
+    ```
+    
+    ## Resource Hierarchy
+    - **Notebooks**: Top-level containers for organizing work
+    - **Datasets**: Collections of data that can be global or notebook-scoped
+    - **Experiments**: AI/ML experiments that can reference dataset variables
+    - **Evals**: Validation configurations for evaluating experiment runs
+    
+    ## Permissions
+    - **Viewer**: Can read notebooks, datasets, and experiments
+    - **Editor**: Can create and modify resources (inherits Viewer permissions)
+    - **Owner**: Full access (inherits Editor permissions)
+    
+    ## Prompt Template Format
+    When creating or updating experiments, prompt templates can be provided as simple strings.
+    The API automatically normalizes them to message arrays for consistent processing.
+    Responses will return templates in the normalized message array format.
+  version: 1.0.0
+  contact:
+    name: Arato AI Support
+    url: https://arato.ai
+  license:
+    name: Proprietary
+servers:
+  - url: https://api.arato.ai/api/v1
+    description: Production server
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  # Notebook endpoints
+  /notebooks:
+    get:
+      summary: List notebooks
+      description: Retrieve a list of all notebooks accessible to the authenticated user
+      tags:
+        - Notebooks
+      responses:
+        '200':
+          description: List of notebooks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notebooks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notebook'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create a notebook
+      description: Create a new notebook
+      tags:
+        - Notebooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotebookCreate'
+            examples:
+              basic:
+                summary: Basic notebook
+                value:
+                  name: "Customer Analysis Notebook"
+                  description: "A notebook for analyzing customer data"
+                  tags: ["analysis", "customers"]
+      responses:
+        '201':
+          description: Notebook created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notebook'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /notebooks/{notebook_id}:
+    get:
+      summary: Get a notebook
+      description: Retrieve a specific notebook by ID
+      tags:
+        - Notebooks
+      parameters:
+        - $ref: '#/components/parameters/NotebookId'
+      responses:
+        '200':
+          description: Notebook details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notebook'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Dataset endpoints (global)
+  /datasets:
+    get:
+      summary: List all datasets
+      description: Retrieve a list of all datasets accessible to the authenticated user
+      tags:
+        - Datasets
+      responses:
+        '200':
+          description: List of datasets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  datasets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Dataset'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create a global dataset
+      description: Create a new global dataset not associated with any specific notebook
+      tags:
+        - Datasets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatasetCreate'
+      responses:
+        '201':
+          description: Dataset created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dataset'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /datasets/{dataset_id}:
+    get:
+      summary: Get a global dataset
+      description: Retrieve a specific global dataset by ID
+      tags:
+        - Datasets
+      parameters:
+        - $ref: '#/components/parameters/DatasetId'
+      responses:
+        '200':
+          description: Dataset details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dataset'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Notebook-scoped dataset endpoints
+  /notebooks/{notebook_id}/datasets:
+    get:
+      summary: List notebook datasets
+      description: Retrieve all datasets associated with a specific notebook
+      tags:
+        - Datasets
+      parameters:
+        - $ref: '#/components/parameters/NotebookId'
+      responses:
+        '200':
+          description: List of notebook datasets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  datasets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Dataset'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create a notebook dataset
+      description: Create a new dataset associated with a specific notebook
+      tags:
+        - Datasets
+      parameters:
+        - $ref: '#/components/parameters/NotebookId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatasetCreate'
+            examples:
+              customer_data:
+                summary: Customer demographics dataset
+                value:
+                  name: "Customer Demographics"
+                  description: "Customer demographic data for analysis"
+                  tags: ["demographics", "customers"]
+                  content:
+                    - customer_name: "Alice Johnson"
+                      age: "28"
+                      city: "San Francisco"
+                      purchase_amount: "250"
+                      product_category: "Electronics"
+                    - customer_name: "Bob Smith"
+                      age: "34"
+                      city: "New York"
+                      purchase_amount: "180"
+                      product_category: "Books"
+      responses:
+        '201':
+          description: Dataset created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dataset'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /notebooks/{notebook_id}/datasets/{dataset_id}:
+    get:
+      summary: Get a notebook dataset
+      description: Retrieve a specific dataset associated with a notebook
+      tags:
+        - Datasets
+      parameters:
+        - $ref: '#/components/parameters/NotebookId'
+        - $ref: '#/components/parameters/DatasetId'
+      responses:
+        '200':
+          description: Dataset details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dataset'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Experiment endpoints
+  /notebooks/{notebook_id}/experiments:
+    get:
+      summary: List notebook experiments
+      description: Retrieve all experiments associated with a specific notebook
+      tags:
+        - Experiments
+      parameters:
+        - $ref: '#/components/parameters/NotebookId'
+      responses:
+        '200':
+          description: List of experiments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  experiments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Experiment'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create an experiment
+      description: Create a new experiment associated with a specific notebook
+      tags:
+        - Experiments
+      parameters:
+        - $ref: '#/components/parameters/NotebookId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExperimentCreate'
+            examples:
+              persona_generator:
+                summary: Customer persona generator experiment
+                value:
+                  name: "Customer Persona Generator"
+                  description: "Generate customer personas based on demographics"
+                  prompt_type: "generating_prompt"
+                  prompt_config:
+                    model_id: "gpt-4o-mini"
+                    vendor_id: "openai"
+                    prompt_template: "Based on the customer data provided, create a detailed persona for {{customer_name}} who is {{age}} years old, lives in {{city}}, and recently purchased {{product_category}} items worth ${{purchase_amount}}."
+                    model_parameters:
+                      temperature: 0.7
+                      max_tokens: 300
+                      top_p: 0.9
+                  color_index: 2
+                  dataset_id: "ds_1234567890abcdef"
+      responses:
+        '201':
+          description: Experiment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Experiment'
+              examples:
+                created_experiment:
+                  summary: Created experiment with normalized prompt template
+                  value:
+                    object: "experiment"
+                    id: "exp_1234567890abcdef"
+                    notebook_id: "nb_1234567890abcdef"
+                    name: "Customer Persona Generator"
+                    description: "Generate customer personas based on demographics"
+                    prompt_type: "generating_prompt"
+                    prompt_config:
+                      model_id: "gpt-4o-mini"
+                      vendor_id: "openai"
+                      prompt_template:
+                        - role: "user"
+                          content: "Based on the customer data provided, create a detailed persona for {{customer_name}} who is {{age}} years old, lives in {{city}}, and recently purchased {{product_category}} items worth ${{purchase_amount}}."
+                      model_parameters:
+                        temperature: 0.7
+                        max_tokens: 300
+                        top_p: 0.9
+                    color_index: 2
+                    dataset_id: "ds_1234567890abcdef"
+                    _links:
+                      self:
+                        href: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /notebooks/{notebook_id}/experiments/{experiment_id}:
+    get:
+      summary: Get an experiment
+      description: Retrieve a specific experiment by ID
+      tags:
+        - Experiments
+      parameters:
+        - $ref: '#/components/parameters/NotebookId'
+        - $ref: '#/components/parameters/ExperimentId'
+      responses:
+        '200':
+          description: Experiment details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Experiment'
+              examples:
+                experiment_details:
+                  summary: Experiment with normalized prompt template
+                  value:
+                    object: "experiment"
+                    id: "exp_1234567890abcdef"
+                    notebook_id: "nb_1234567890abcdef"
+                    name: "Customer Persona Generator"
+                    description: "Generate customer personas based on demographics"
+                    prompt_type: "generating_prompt"
+                    prompt_config:
+                      model_id: "gpt-4o-mini"
+                      vendor_id: "openai"
+                      prompt_template:
+                        - role: "user"
+                          content: "Based on the customer data provided, create a detailed persona for {{customer_name}} who is {{age}} years old, lives in {{city}}, and recently purchased {{product_category}} items worth ${{purchase_amount}}."
+                      model_parameters:
+                        temperature: 0.7
+                        max_tokens: 300
+                        top_p: 0.9
+                    color_index: 2
+                    _links:
+                      self:
+                        href: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef"
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: Update an experiment
+      description: Update an existing experiment. Requires Editor permissions on the notebook.
+      tags:
+        - Experiments
+      parameters:
+        - $ref: '#/components/parameters/NotebookId'
+        - $ref: '#/components/parameters/ExperimentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExperimentUpdate'
+            examples:
+              update_prompt:
+                summary: Update experiment prompt
+                value:
+                  name: "Enhanced Customer Persona Generator"
+                  description: "Generate detailed customer personas with enhanced insights"
+                  prompt_config:
+                    prompt_template: "Create a comprehensive persona for {{customer_name}}, age {{age}}, from {{city}}. Recent purchase: {{product_category}} worth ${{purchase_amount}}. Include personality traits, lifestyle preferences, and marketing recommendations."
+                    model_parameters:
+                      temperature: 0.8
+                      max_tokens: 500
+      responses:
+        '200':
+          description: Experiment updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Experiment'
+              examples:
+                updated_experiment:
+                  summary: Updated experiment with normalized prompt template
+                  value:
+                    object: "experiment"
+                    id: "exp_1234567890abcdef"
+                    notebook_id: "nb_1234567890abcdef"
+                    name: "Enhanced Customer Persona Generator"
+                    description: "Generate detailed customer personas with enhanced insights"
+                    prompt_type: "generating_prompt"
+                    prompt_config:
+                      model_id: "gpt-4o-mini"
+                      vendor_id: "openai"
+                      prompt_template:
+                        - role: "user"
+                          content: "Create a comprehensive persona for {{customer_name}}, age {{age}}, from {{city}}. Recent purchase: {{product_category}} worth ${{purchase_amount}}. Include personality traits, lifestyle preferences, and marketing recommendations."
+                      model_parameters:
+                        temperature: 0.8
+                        max_tokens: 500
+                    color_index: 2
+                    _links:
+                      self:
+                        href: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /notebooks/{notebook_id}/experiments/{experiment_id}/runs:
+    post:
+      summary: Create and execute a run
+      description: |
+        Create and execute a run for an experiment. Requires Editor permissions on the notebook.
+        
+        A run executes the experiment's prompt against a dataset, using the provided API keys for AI model access.
+        You can optionally provide a callback_url to receive webhook notifications about the run's progress.
+        
+        **Webhook Notifications:**
+        When a callback_url is provided, the system will POST run status updates to that URL with payloads like:
+        - `{"status": "in_progress", "run_id": "bld_...", "run_number": 1, "progress": 0.25}`
+        - `{"status": "completed", "run_id": "bld_...", "run_number": 1}`
+        - `{"status": "failed", "run_id": "bld_...", "run_number": 1, "error": "..."}`
+      tags:
+        - Runs
+      parameters:
+        - $ref: '#/components/parameters/NotebookId'
+        - $ref: '#/components/parameters/ExperimentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunCreate'
+            examples:
+              basic_run:
+                summary: Basic run with required API keys
+                value:
+                  api_keys:
+                    openai_api_key: "sk-proj-..."
+              run_with_callback:
+                summary: Run with webhook callback
+                value:
+                  api_keys:
+                    openai_api_key: "sk-proj-..."
+                    anthropic_api_key: "sk-ant-..."
+                  callback_url: "https://example.com/webhooks/run-status"
+      responses:
+        '201':
+          description: Run created and initiated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+              examples:
+                run_created:
+                  summary: Run initiated
+                  value:
+                    object: "run"
+                    id: "bld_1234567890abcdef"
+                    experiment_id: "exp_1234567890abcdef"
+                    notebook_id: "nb_1234567890abcdef"
+                    status: "initiated"
+                    run_number: 1
+                    started_at: "2024-03-15T10:30:00Z"
+                    _links:
+                      self:
+                        href: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef/runs/bld_1234567890abcdef"
+                      experiment:
+                        href: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      summary: List runs for an experiment
+      description: |
+        List all runs for a specific experiment. Returns basic run metadata without the full content.
+        Use the GET `/runs/{run_id}` endpoint to retrieve a specific run with its content.
+      tags:
+        - Runs
+      parameters:
+        - $ref: '#/components/parameters/NotebookId'
+        - $ref: '#/components/parameters/ExperimentId'
+      responses:
+        '200':
+          description: List of runs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        object:
+                          type: string
+                          enum: [run]
+                          example: "run"
+                        id:
+                          type: string
+                          example: "bld_1234567890abcdef"
+                        experiment_id:
+                          type: string
+                          example: "exp_1234567890abcdef"
+                        notebook_id:
+                          type: string
+                          example: "nb_1234567890abcdef"
+                        status:
+                          type: string
+                          enum: [initiated, in_progress, done, done_with_errors, fail]
+                          example: "done"
+                        run_number:
+                          type: integer
+                          example: 1
+                        started_at:
+                          type: string
+                          format: date-time
+                          example: "2024-03-15T10:30:00Z"
+                        completed_at:
+                          type: string
+                          format: date-time
+                          example: "2024-03-15T10:35:30Z"
+                        _links:
+                          type: object
+                          properties:
+                            self:
+                              type: object
+                              properties:
+                                href:
+                                  type: string
+                                  example: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef/runs/bld_1234567890abcdef"
+              examples:
+                runs_list:
+                  summary: List of experiment runs
+                  value:
+                    runs:
+                      - object: "run"
+                        id: "bld_1234567890abcdef"
+                        experiment_id: "exp_1234567890abcdef"
+                        notebook_id: "nb_1234567890abcdef"
+                        status: "done"
+                        run_number: 1
+                        started_at: "2024-03-15T10:30:00Z"
+                        completed_at: "2024-03-15T10:35:30Z"
+                        _links:
+                          self:
+                            href: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef/runs/bld_1234567890abcdef"
+                      - object: "run"
+                        id: "bld_0987654321fedcba"
+                        experiment_id: "exp_1234567890abcdef"
+                        notebook_id: "nb_1234567890abcdef"
+                        status: "in_progress"
+                        run_number: 2
+                        started_at: "2024-03-15T11:00:00Z"
+                        _links:
+                          self:
+                            href: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef/runs/bld_0987654321fedcba"
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /notebooks/{notebook_id}/experiments/{experiment_id}/runs/{run_id}:
+    get:
+      summary: Get a specific run
+      description: |
+        Retrieve details about a specific run.
+        
+        When the run has completed successfully (`status: done` or `status: done_with_errors`),
+        the response includes additional fields:
+        - `prompt_template`: The prompt template used in this run
+        - `model`: The AI model used in this run
+        - `content`: Array containing the run results (first 100 events by default)
+        
+        Each item in the content array includes:
+        - All input variables from the dataset row
+        - `prompt`: The actual prompt sent to the AI model (template with variables filled in)
+        - `response`: The AI-generated response
+        - `tool_calls`: Any tool/function calls made by the AI (if applicable)
+        - `finish_reason`: Why the AI stopped generating (e.g., "stop", "length", "tool_calls")
+        - `completion_id`: Unique identifier for this completion from the AI provider
+        - `prompt_id`: Optional prompt identifier (if using prompt versioning)
+        - `prompt_version`: Optional prompt version (if using prompt versioning)
+        - `tokens_in`: Number of input tokens consumed
+        - `tokens_out`: Number of output tokens generated
+        - `evals`: Array of evaluation results (if the experiment has evals configured)
+        
+        Each eval result in the `evals` array includes:
+        - `id`: The eval identifier
+        - `name`: The eval name
+        - `type`: The eval type ("Numeric", "Binary", or "Classification")
+        - `result`: The evaluation result (1 for pass, 0 for fail)
+        - `score`: The numeric score (for Numeric evals: 0-10 scale; for Binary evals: same as result, either 1 or 0)
+        - `explanation`: Optional explanation text for the evaluation result
+        - `title`: The selected classification label (only for Classification evals)
+        - `color`: The color associated with the classification (only for Classification evals, optional)
+      tags:
+        - Runs
+      parameters:
+        - $ref: '#/components/parameters/NotebookId'
+        - $ref: '#/components/parameters/ExperimentId'
+        - $ref: '#/components/parameters/RunId'
+      responses:
+        '200':
+          description: Run details with optional content for completed runs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+              examples:
+                in_progress_run:
+                  summary: Run in progress (no content yet)
+                  value:
+                    object: "run"
+                    id: "bld_1234567890abcdef"
+                    experiment_id: "exp_1234567890abcdef"
+                    notebook_id: "nb_1234567890abcdef"
+                    status: "in_progress"
+                    run_number: 1
+                    started_at: "2024-03-15T10:30:00Z"
+                    dataset_id: "ds_1234567890abcdef"
+                    dataset_name: "Customer Data"
+                    total_events: 100
+                    completed_events: 45
+                    prompt_type: "generating_prompt"
+                    _links:
+                      self:
+                        href: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef/runs/bld_1234567890abcdef"
+                completed_run_with_content:
+                  summary: Completed run with content
+                  value:
+                    object: "run"
+                    id: "bld_1234567890abcdef"
+                    experiment_id: "exp_1234567890abcdef"
+                    notebook_id: "nb_1234567890abcdef"
+                    status: "done"
+                    run_number: 1
+                    started_at: "2024-03-15T10:30:00Z"
+                    completed_at: "2024-03-15T10:35:30Z"
+                    dataset_id: "ds_1234567890abcdef"
+                    dataset_name: "Customer Data"
+                    total_events: 3
+                    completed_events: 3
+                    prompt_type: "generating_prompt"
+                    prompt_template: "Create a customer persona for {{customer_name}}, aged {{age}}, living in {{city}}, who recently purchased {{product_category}} worth ${{purchase_amount}}."
+                    model: "gpt-4"
+                    content:
+                      - customer_name: "Alice"
+                        age: "30"
+                        city: "New York"
+                        product_category: "electronics"
+                        purchase_amount: "500"
+                        prompt: "Create a customer persona for Alice, aged 30, living in New York, who recently purchased electronics worth $500."
+                        response: "Meet Alice, a 30-year-old tech enthusiast from New York who recently invested $500 in electronics..."
+                        tool_calls: null
+                        finish_reason: "stop"
+                        completion_id: "chatcmpl-abc123"
+                        prompt_id: "prompt_v1_123"
+                        prompt_version: "2"
+                        tokens_in: 45
+                        tokens_out: 127
+                        evals:
+                          - id: "eval-2b0e8263-ef2a-4abd-9e2f-cf6afed47c38"
+                            name: "Response Quality Score"
+                            type: "Numeric"
+                            score: 8.5
+                            result: 1
+                            explanation: "High quality response with good detail"
+                          - id: "eval-3c1f9374-fg3b-5cde-0g3h-dg7bfhe58d49"
+                            name: "Safety Check"
+                            type: "Binary"
+                            score: 1
+                            result: 1
+                            explanation: "Response is appropriate and safe"
+                      - customer_name: "Bob"
+                        age: "25"
+                        city: "Los Angeles"
+                        product_category: "books"
+                        purchase_amount: "100"
+                        prompt: "Create a customer persona for Bob, aged 25, living in Los Angeles, who recently purchased books worth $100."
+                        response: "Bob is a 25-year-old avid reader from Los Angeles who spent $100 on books..."
+                        tool_calls: null
+                        finish_reason: "stop"
+                        completion_id: "chatcmpl-def456"
+                        tokens_in: 42
+                        tokens_out: 98
+                        evals:
+                          - id: "eval-2b0e8263-ef2a-4abd-9e2f-cf6afed47c38"
+                            name: "Response Quality Score"
+                            type: "Numeric"
+                            score: 7.0
+                            result: 1
+                            explanation: "Good response with adequate detail"
+                          - id: "eval-3c1f9374-fg3b-5cde-0g3h-dg7bfhe58d49"
+                            name: "Safety Check"
+                            type: "Binary"
+                            score: 1
+                            result: 1
+                            explanation: "Response is appropriate and safe"
+                      - customer_name: "Charlie"
+                        age: "35"
+                        city: "Chicago"
+                        product_category: "clothing"
+                        purchase_amount: "200"
+                        prompt: "Create a customer persona for Charlie, aged 35, living in Chicago, who recently purchased clothing worth $200."
+                        response: "Charlie, 35, from Chicago is a fashion-conscious professional who invested $200 in new clothing..."
+                        tool_calls: null
+                        finish_reason: "stop"
+                        completion_id: "chatcmpl-ghi789"
+                        prompt_id: "prompt_v1_123"
+                        prompt_version: "2"
+                        tokens_in: 43
+                        tokens_out: 105
+                        evals:
+                          - id: "eval-2b0e8263-ef2a-4abd-9e2f-cf6afed47c38"
+                            name: "Response Quality Score"
+                            type: "Numeric"
+                            score: 9.2
+                            result: 1
+                            explanation: "Excellent response with comprehensive detail"
+                          - id: "eval-3c1f9374-fg3b-5cde-0g3h-dg7bfhe58d49"
+                            name: "Safety Check"
+                            type: "Binary"
+                            score: 1
+                            result: 1
+                            explanation: "Response is appropriate and safe"
+                          - id: "eval-4d2g0485-hg4c-6def-1h4i-eh8cghf69e50"
+                            name: "Purchase Amount Classification"
+                            type: "Classification"
+                            score: 1
+                            result: 1
+                            title: "High"
+                            color: "green"
+                            explanation: "Purchase amount of $200 indicates high spending"
+                    _links:
+                      self:
+                        href: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef/runs/bld_1234567890abcdef"
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Eval endpoints
+  /notebooks/{notebook_id}/experiments/{experiment_id}/evals:
+    get:
+      summary: List evals for an experiment
+      description: |
+        Retrieve all evaluation configurations associated with a specific experiment.
+        Returns a lightweight list with id, name, and description for each eval.
+        Use the GET `/evals/{eval_id}` endpoint to retrieve full eval details including configuration.
+      tags:
+        - Evals
+      parameters:
+        - $ref: '#/components/parameters/NotebookId'
+        - $ref: '#/components/parameters/ExperimentId'
+      responses:
+        '200':
+          description: List of evals with basic metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  evals:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - object
+                        - id
+                        - name
+                        - description
+                        - _links
+                      properties:
+                        object:
+                          type: string
+                          enum: [eval]
+                          example: "eval"
+                        id:
+                          type: string
+                          description: Unique identifier for the eval
+                          example: "eval-2b0e8263-ef2a-4abd-9e2f-cf6afed47c38"
+                        name:
+                          type: string
+                          description: Name of the eval
+                          example: "Response Quality Score"
+                        description:
+                          type: string
+                          description: Description of the eval
+                          example: "Evaluates response quality on a 0-10 scale"
+                        _links:
+                          type: object
+                          properties:
+                            self:
+                              type: object
+                              properties:
+                                href:
+                                  type: string
+                                  example: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef/evals/eval-2b0e8263-ef2a-4abd-9e2f-cf6afed47c38"
+              examples:
+                evals_list:
+                  summary: List of experiment evals
+                  value:
+                    evals:
+                      - object: "eval"
+                        id: "eval-2b0e8263-ef2a-4abd-9e2f-cf6afed47c38"
+                        name: "Response Quality Score"
+                        description: "Evaluates response quality on a 0-10 scale"
+                        _links:
+                          self:
+                            href: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef/evals/eval-2b0e8263-ef2a-4abd-9e2f-cf6afed47c38"
+                      - object: "eval"
+                        id: "eval-3c1f9374-fg3b-5cde-0g3h-dg7bfhe58d49"
+                        name: "Safety Check"
+                        description: "Validates responses for safety and appropriateness"
+                        _links:
+                          self:
+                            href: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef/evals/eval-3c1f9374-fg3b-5cde-0g3h-dg7bfhe58d49"
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create an eval
+      description: |
+        Create a new evaluation configuration for an experiment.
+        
+        ## Eval Types
+        
+        ### Numeric Evaluations
+        Define score ranges with pass/fail thresholds. Each range specifies:
+        - `min_score` and `max_score` values for the score range
+        - `is_pass` boolean indicating if scores in this range pass validation
+        
+        ### Binary Evaluations
+        Use an AI model to evaluate responses with pass/fail criteria:
+        - `fail_on_positive`: If true, "yes" responses from the model indicate failure
+        
+        ### Classification Evaluations
+        Use an AI model to categorize responses into predefined classes:
+        - `classes`: Array of classification options, each with:
+          - `title`: Label for the class (e.g., "Low", "Moderate", "High")
+          - `is_pass`: Boolean indicating if this class passes validation
+          - `color`: Optional color for UI display (e.g., "red", "yellow", "green")
+        
+        ## Context Options
+        The `context` field determines what data the eval receives:
+        - `prompt`: Only the prompt text
+        - `response`: Only the AI response (internally mapped to 'arato_run_response')
+        - `prompt_and_response`: Both prompt and response (default)
+        - `variables_values`: All input variables from the dataset row
+        - `finish_reason`: Why the AI stopped generating
+        - `tool_calls`: Any tool/function calls made by the AI
+        - Or any specific variable name from your dataset
+      tags:
+        - Evals
+      parameters:
+        - $ref: '#/components/parameters/NotebookId'
+        - $ref: '#/components/parameters/ExperimentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvalCreate'
+            examples:
+              numeric_eval:
+                summary: Numeric evaluation with score ranges
+                value:
+                  name: "Response Quality Score"
+                  eval_type: "Numeric"
+                  context: "response"
+                  ranges:
+                    - min_score: 0
+                      max_score: 3
+                      is_pass: false
+                    - min_score: 4
+                      max_score: 7
+                      is_pass: true
+                    - min_score: 8
+                      max_score: 10
+                      is_pass: true
+              binary_eval:
+                summary: Binary evaluation with AI model
+                value:
+                  name: "Safety Check"
+                  eval_type: "Binary"
+                  context: "prompt_and_response"
+                  fail_on_positive: true
+              classification_eval:
+                summary: Classification evaluation with custom categories
+                value:
+                  name: "Risk Level Assessment"
+                  eval_type: "Classification"
+                  context: "response"
+                  prompt: "Categorize the risk level of this response"
+                  classes:
+                    - title: "Low"
+                      is_pass: true
+                      color: "green"
+                    - title: "Moderate"
+                      is_pass: true
+                      color: "yellow"
+                    - title: "High"
+                      is_pass: false
+                      color: "red"
+      responses:
+        '201':
+          description: Eval created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Eval'
+              examples:
+                created_numeric_eval:
+                  summary: Created numeric eval with generated range IDs
+                  value:
+                    object: "eval"
+                    id: "eval-2b0e8263-ef2a-4abd-9e2f-cf6afed47c38"
+                    experiment_id: "exp_1234567890abcdef"
+                    notebook_id: "nb_1234567890abcdef"
+                    name: "Response Quality Score"
+                    eval_type: "Numeric"
+                    context: "response"
+                    prompt: "Rate the quality of this response on a scale of 0-10"
+                    ranges:
+                      - range_id: "range_1"
+                        min_score: 0
+                        max_score: 3
+                        is_pass: false
+                      - range_id: "range_2"
+                        min_score: 4
+                        max_score: 7
+                        is_pass: true
+                      - range_id: "range_3"
+                        min_score: 8
+                        max_score: 10
+                        is_pass: true
+                    _links:
+                      self:
+                        href: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef/evals/eval-2b0e8263-ef2a-4abd-9e2f-cf6afed47c38"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /notebooks/{notebook_id}/experiments/{experiment_id}/evals/{eval_id}:
+    get:
+      summary: Get an eval
+      description: Retrieve a specific evaluation configuration by ID
+      tags:
+        - Evals
+      parameters:
+        - $ref: '#/components/parameters/NotebookId'
+        - $ref: '#/components/parameters/ExperimentId'
+        - $ref: '#/components/parameters/EvalId'
+      responses:
+        '200':
+          description: Eval details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Eval'
+              examples:
+                numeric_eval:
+                  summary: Numeric eval details
+                  value:
+                    object: "eval"
+                    id: "eval-2b0e8263-ef2a-4abd-9e2f-cf6afed47c38"
+                    experiment_id: "exp_1234567890abcdef"
+                    notebook_id: "nb_1234567890abcdef"
+                    name: "Response Quality Score"
+                    eval_type: "Numeric"
+                    context: "response"
+                    prompt: "Rate the quality of this response on a scale of 0-10"
+                    ranges:
+                      - range_id: "range_1"
+                        min_score: 0
+                        max_score: 3
+                        is_pass: false
+                      - range_id: "range_2"
+                        min_score: 4
+                        max_score: 7
+                        is_pass: true
+                      - range_id: "range_3"
+                        min_score: 8
+                        max_score: 10
+                        is_pass: true
+                    _links:
+                      self:
+                        href: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef/evals/eval-2b0e8263-ef2a-4abd-9e2f-cf6afed47c38"
+                binary_eval:
+                  summary: Binary eval details
+                  value:
+                    object: "eval"
+                    id: "eval-3c1f9374-fg3b-5cde-0g3h-dg7bfhe58d49"
+                    experiment_id: "exp_1234567890abcdef"
+                    notebook_id: "nb_1234567890abcdef"
+                    name: "Safety Check"
+                    eval_type: "Binary"
+                    context: "prompt_and_response"
+                    prompt: "Is this response safe and appropriate?"
+                    fail_on_positive: true
+                    _links:
+                      self:
+                        href: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef/evals/eval-3c1f9374-fg3b-5cde-0g3h-dg7bfhe58d49"
+                classification_eval:
+                  summary: Classification eval details
+                  value:
+                    object: "eval"
+                    id: "eval-4d2g0485-hg4c-6def-1h4i-eh8cghf69e50"
+                    experiment_id: "exp_1234567890abcdef"
+                    notebook_id: "nb_1234567890abcdef"
+                    name: "Risk Level Assessment"
+                    eval_type: "Classification"
+                    context: "response"
+                    prompt: "Categorize the risk level of this response"
+                    classes:
+                      - id: "label-a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                        title: "Low"
+                        is_pass: true
+                        color: "green"
+                      - id: "label-b2c3d4e5-f6g7-8901-bcde-fg2345678901"
+                        title: "Moderate"
+                        is_pass: true
+                        color: "yellow"
+                      - id: "label-c3d4e5f6-g7h8-9012-cdef-gh3456789012"
+                        title: "High"
+                        is_pass: false
+                        color: "red"
+                    _links:
+                      self:
+                        href: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef/evals/eval-4d2g0485-hg4c-6def-1h4i-eh8cghf69e50"
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: Update an eval
+      description: |
+        Update an existing evaluation configuration. Requires Editor permissions on the notebook.
+        You can update the name, context, and validation configuration.
+      tags:
+        - Evals
+      parameters:
+        - $ref: '#/components/parameters/NotebookId'
+        - $ref: '#/components/parameters/ExperimentId'
+        - $ref: '#/components/parameters/EvalId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvalUpdate'
+            examples:
+              update_ranges:
+                summary: Update numeric eval ranges
+                value:
+                  name: "Enhanced Quality Score"
+                  ranges:
+                    - range_id: "range_1"
+                      min_score: 0
+                      max_score: 4
+                      is_pass: false
+                    - range_id: "range_2"
+                      min_score: 5
+                      max_score: 10
+                      is_pass: true
+              update_context:
+                summary: Update eval context
+                value:
+                  context: "variables_values"
+      responses:
+        '200':
+          description: Eval updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Eval'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: http
+      scheme: bearer
+      description: API key for authentication
+
+  parameters:
+    NotebookId:
+      name: notebook_id
+      in: path
+      required: true
+      description: Unique identifier for the notebook
+      schema:
+        type: string
+        example: "nb_1234567890abcdef"
+
+    DatasetId:
+      name: dataset_id
+      in: path
+      required: true
+      description: Unique identifier for the dataset
+      schema:
+        type: string
+        example: "ds_1234567890abcdef"
+
+    ExperimentId:
+      name: experiment_id
+      in: path
+      required: true
+      description: Unique identifier for the experiment
+      schema:
+        type: string
+        example: "exp_1234567890abcdef"
+
+    RunId:
+      name: run_id
+      in: path
+      required: true
+      description: Unique identifier for the run
+      schema:
+        type: string
+        example: "bld_1234567890abcdef"
+
+    EvalId:
+      name: eval_id
+      in: path
+      required: true
+      description: Unique identifier for the eval (format eval-{uuid})
+      schema:
+        type: string
+        example: "eval-2b0e8263-ef2a-4abd-9e2f-cf6afed47c38"
+
+  schemas:
+    # Notebook schemas
+    NotebookCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Name of the notebook
+          example: "Customer Analysis Notebook"
+        description:
+          type: string
+          description: Optional description of the notebook
+          example: "A notebook for analyzing customer data"
+        tags:
+          type: array
+          items:
+            type: string
+          description: Optional tags for categorizing the notebook
+          example: ["analysis", "customers"]
+
+    Notebook:
+      allOf:
+        - $ref: '#/components/schemas/NotebookCreate'
+        - type: object
+          required:
+            - object
+            - id
+            - _links
+          properties:
+            object:
+              type: string
+              enum: [notebook]
+              example: "notebook"
+            id:
+              type: string
+              description: Unique identifier for the notebook
+              example: "nb_1234567890abcdef"
+            _links:
+              type: object
+              properties:
+                self:
+                  type: object
+                  properties:
+                    href:
+                      type: string
+                      example: "/v1/notebooks/nb_1234567890abcdef"
+                datasets:
+                  type: object
+                  properties:
+                    href:
+                      type: string
+                      example: "/v1/notebooks/nb_1234567890abcdef/datasets/"
+                experiments:
+                  type: object
+                  properties:
+                    href:
+                      type: string
+                      example: "/v1/notebooks/nb_1234567890abcdef/experiments/"
+
+    # Dataset schemas
+    DatasetCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Name of the dataset
+          example: "Customer Demographics"
+        description:
+          type: string
+          description: Optional description of the dataset
+          example: "Customer demographic data for analysis"
+        tags:
+          type: array
+          items:
+            type: string
+          description: Optional tags for categorizing the dataset
+          example: ["demographics", "customers"]
+        content:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          description: Array of data objects with arbitrary key-value pairs
+          example:
+            - customer_name: "Alice Johnson"
+              age: "28"
+              city: "San Francisco"
+            - customer_name: "Bob Smith"
+              age: "34"
+              city: "New York"
+
+    Dataset:
+      allOf:
+        - $ref: '#/components/schemas/DatasetCreate'
+        - type: object
+          required:
+            - object
+            - id
+            - _links
+          properties:
+            object:
+              type: string
+              enum: [dataset]
+              example: "dataset"
+            id:
+              type: string
+              description: Unique identifier for the dataset
+              example: "ds_1234567890abcdef"
+            notebook_id:
+              type: string
+              description: ID of the associated notebook (only present for notebook-scoped datasets)
+              example: "nb_1234567890abcdef"
+            _links:
+              type: object
+              properties:
+                self:
+                  type: object
+                  properties:
+                    href:
+                      type: string
+                      example: "/v1/notebooks/nb_1234567890abcdef/datasets/ds_1234567890abcdef"
+
+    # Experiment schemas
+    PromptConfig:
+      type: object
+      description: |
+        Configuration for AI model prompts. Note: prompt_template accepts strings on input 
+        but returns normalized message arrays in responses for consistent Jinja2 processing.
+      required:
+        - model_id
+        - vendor_id
+        - prompt_template
+      properties:
+        model_id:
+          type: string
+          description: AI model identifier
+          example: "gpt-4o-mini"
+        vendor_id:
+          type: string
+          description: AI vendor identifier
+          example: "openai"
+        prompt_template:
+          oneOf:
+            - type: string
+              description: Template string with variable placeholders in {{variable}} format (accepted on input)
+              example: "Generate a persona for {{customer_name}} who is {{age}} years old"
+            - type: array
+              description: Array of message objects in Jinja2 format (returned in responses)
+              items:
+                type: object
+                required:
+                  - role
+                  - content
+                properties:
+                  role:
+                    type: string
+                    enum: [user, system, assistant]
+                    description: Role of the message sender
+                    example: "user"
+                  content:
+                    type: string
+                    description: Message content with variable placeholders in {{variable}} format
+                    example: "Generate a persona for {{customer_name}} who is {{age}} years old"
+              example:
+                - role: "user"
+                  content: "Generate a persona for {{customer_name}} who is {{age}} years old"
+        model_parameters:
+          type: object
+          description: Model-specific parameters
+          properties:
+            temperature:
+              type: number
+              minimum: 0
+              maximum: 2
+              description: Controls randomness in model output
+              example: 0.7
+            max_tokens:
+              type: integer
+              minimum: 1
+              description: Maximum number of tokens to generate
+              example: 300
+            top_p:
+              type: number
+              minimum: 0
+              maximum: 1
+              description: Controls diversity of model output
+              example: 0.9
+          additionalProperties: true
+
+    ExperimentCreate:
+      type: object
+      required:
+        - name
+        - prompt_config
+      properties:
+        name:
+          type: string
+          description: Name of the experiment
+          example: "Customer Persona Generator"
+        description:
+          type: string
+          description: Optional description of the experiment
+          example: "Generate customer personas based on demographics"
+        prompt_type:
+          type: string
+          description: Type of prompt
+          enum: [generating_prompt]
+          default: generating_prompt
+        prompt_config:
+          $ref: '#/components/schemas/PromptConfig'
+        color_index:
+          type: integer
+          description: Color index for UI display (0-based)
+          minimum: 0
+          example: 2
+        dataset_id:
+          type: string
+          description: ID of the dataset to use for this experiment. Defaults to 'system0' if not provided.
+          example: "ds_1234567890abcdef"
+
+    ExperimentUpdate:
+      type: object
+      description: Fields that can be updated in an experiment
+      properties:
+        name:
+          type: string
+          description: Name of the experiment
+          example: "Enhanced Customer Persona Generator"
+        description:
+          type: string
+          description: Description of the experiment
+          example: "Generate detailed customer personas with enhanced insights"
+        prompt_type:
+          type: string
+          enum: [generating_prompt]
+        prompt_config:
+          $ref: '#/components/schemas/PromptConfig'
+        color_index:
+          type: integer
+          minimum: 0
+          example: 3
+        dataset_id:
+          type: string
+          description: ID of the dataset to use for this experiment
+          example: "ds_1234567890abcdef"
+
+    Experiment:
+      allOf:
+        - $ref: '#/components/schemas/ExperimentCreate'
+        - type: object
+          required:
+            - object
+            - id
+            - notebook_id
+            - _links
+          properties:
+            object:
+              type: string
+              enum: [experiment]
+              example: "experiment"
+            id:
+              type: string
+              description: Unique identifier for the experiment
+              example: "exp_1234567890abcdef"
+            notebook_id:
+              type: string
+              description: ID of the associated notebook
+              example: "nb_1234567890abcdef"
+            _links:
+              type: object
+              properties:
+                self:
+                  type: object
+                  properties:
+                    href:
+                      type: string
+                      example: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef"
+
+    RunCreate:
+      type: object
+      required:
+        - api_keys
+      properties:
+        api_keys:
+          type: object
+          description: |
+            API keys for AI model providers (e.g., OpenAI, Anthropic, etc.).
+            The required keys depend on the experiment's configured model.
+            Keys are encrypted and securely stored.
+          additionalProperties:
+            type: string
+          example:
+            openai_api_key: "sk-proj-..."
+            anthropic_api_key: "sk-ant-..."
+        callback_url:
+          type: string
+          format: uri
+          description: |
+            Optional webhook URL to receive run status updates.
+            The system will POST JSON payloads with status changes:
+            - `{"status": "in_progress", "run_id": "bld_...", "run_number": 1, "progress": 0.25}`
+            - `{"status": "completed", "run_id": "bld_...", "run_number": 1}`
+            - `{"status": "failed", "run_id": "bld_...", "run_number": 1, "error": "..."}`
+          example: "https://example.com/webhooks/run-status"
+
+    Run:
+      allOf:
+        - $ref: '#/components/schemas/RunCreate'
+        - type: object
+          required:
+            - object
+            - id
+            - experiment_id
+            - notebook_id
+            - status
+            - run_number
+            - started_at
+            - _links
+          properties:
+            object:
+              type: string
+              enum: [run]
+              example: "run"
+            id:
+              type: string
+              description: Unique identifier for the run (build ID)
+              example: "bld_1234567890abcdef"
+            experiment_id:
+              type: string
+              description: ID of the associated experiment
+              example: "exp_1234567890abcdef"
+            notebook_id:
+              type: string
+              description: ID of the associated notebook
+              example: "nb_1234567890abcdef"
+            status:
+              type: string
+              enum: [initiated, in_progress, done, done_with_errors, fail]
+              description: Current status of the run
+              example: "initiated"
+            run_number:
+              type: integer
+              description: Sequential run number for this experiment
+              example: 1
+            started_at:
+              type: string
+              format: date-time
+              description: Timestamp when the run was initiated
+              example: "2024-03-15T10:30:00Z"
+            completed_at:
+              type: string
+              format: date-time
+              description: Timestamp when the run completed (only present for completed/failed runs)
+              example: "2024-03-15T10:35:30Z"
+            dataset_id:
+              type: string
+              description: ID of the dataset used for this run
+              example: "ds_1234567890abcdef"
+            dataset_name:
+              type: string
+              description: Name of the dataset used for this run
+              example: "Customer Data"
+            total_events:
+              type: integer
+              description: Total number of events/rows in the run
+              example: 100
+            completed_events:
+              type: integer
+              description: Number of completed events/rows
+              example: 100
+            prompt_type:
+              type: string
+              enum: [generating_prompt, chat_prompt, github_prompt]
+              description: Type of prompt used in the experiment
+              example: "generating_prompt"
+            prompt_template:
+              type: string
+              description: |
+                The prompt template used in this run (only included when status is 'done' or 'done_with_errors').
+                Extracted from the first log event.
+              example: "Create a customer persona for {{customer_name}}, aged {{age}}, living in {{city}}."
+            model:
+              type: string
+              description: |
+                The AI model used in this run (only included when status is 'done' or 'done_with_errors').
+                Extracted from the first log event.
+              example: "gpt-4"
+            content:
+              type: array
+              description: |
+                Array of run results (only included when status is 'done' or 'done_with_errors').
+                Each item contains the input variables from the dataset plus the AI-generated response and metadata.
+              items:
+                type: object
+                additionalProperties: true
+                description: |
+                  A row of run results containing:
+                  - Dataset variables (columns used in the experiment)
+                  - AI response and metadata fields (prompt, response, tool_calls, finish_reason, completion_id, tokens_in, tokens_out)
+                  - Optional prompt tracking fields (prompt_id, prompt_version) if available
+                  
+                  The exact dataset properties depend on the columns used in the experiment.
+                example:
+                  customer_name: "Alice"
+                  age: "30"
+                  city: "New York"
+                  product_category: "electronics"
+                  purchase_amount: "500"
+                  prompt: "Create a customer persona for Alice, aged 30, living in New York."
+                  response: "Meet Alice, a 30-year-old tech enthusiast from New York..."
+                  tool_calls: null
+                  finish_reason: "stop"
+                  completion_id: "chatcmpl-123abc"
+                  prompt_id: "prompt_v1_123"
+                  prompt_version: "2"
+                  tokens_in: 45
+                  tokens_out: 127
+            _links:
+              type: object
+              properties:
+                self:
+                  type: object
+                  properties:
+                    href:
+                      type: string
+                      example: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef/runs/bld_1234567890abcdef"
+
+    # Eval schemas
+    NumericRange:
+      type: object
+      required:
+        - min_score
+        - max_score
+        - is_pass
+      properties:
+        range_id:
+          type: string
+          description: Unique identifier for the range (auto-generated if not provided)
+          example: "range_1"
+        min_score:
+          type: number
+          description: Minimum score value for this range (inclusive)
+          example: 0
+        max_score:
+          type: number
+          description: Maximum score value for this range (inclusive)
+          example: 3
+        is_pass:
+          type: boolean
+          description: Whether scores in this range are considered passing
+          example: false
+
+    ValidationConfig:
+      type: object
+      description: Configuration for validation logic (structure depends on validation_type)
+      oneOf:
+        - type: object
+          description: Configuration for NumericValidator
+          required:
+            - validation_type
+            - ranges
+          properties:
+            validation_type:
+              type: string
+              enum: [NumericValidator]
+              example: "NumericValidator"
+            ranges:
+              type: array
+              items:
+                $ref: '#/components/schemas/NumericRange'
+              description: Array of score ranges with pass/fail criteria
+        - type: object
+          description: Configuration for ModelValidator (Binary evaluation)
+          required:
+            - validation_type
+            - model_id
+            - criteria
+          properties:
+            validation_type:
+              type: string
+              enum: [ModelValidator]
+              example: "ModelValidator"
+            model_id:
+              type: string
+              description: AI model to use for evaluation
+              example: "amazon.titan-text-premier-v1:0"
+            criteria:
+              type: object
+              required:
+                - type
+                - fail_on_positive
+              properties:
+                type:
+                  type: string
+                  enum: [Binary]
+                  example: "Binary"
+                fail_on_positive:
+                  type: boolean
+                  description: If true, "yes" responses from the model indicate failure
+                  example: true
+
+    EvalCreate:
+      type: object
+      required:
+        - name
+        - eval_type
+      properties:
+        name:
+          type: string
+          description: Name of the evaluation
+          example: "Response Quality Score"
+        eval_type:
+          type: string
+          description: Type of evaluation
+          enum: [Numeric, Binary]
+          example: "Numeric"
+        context:
+          type: string
+          description: |
+            What data the eval receives for validation.
+            Valid values: prompt, response, prompt_and_response, variables_values, 
+            finish_reason, tool_calls, or any variable name from your dataset.
+            Default: prompt_and_response
+          example: "response"
+        ranges:
+          type: array
+          description: Score ranges for Numeric evaluations (required for eval_type=Numeric)
+          items:
+            $ref: '#/components/schemas/NumericRange'
+        fail_on_positive:
+          type: boolean
+          description: For Binary evaluations - if true, "yes" responses indicate failure (required for eval_type=Binary)
+          example: true
+
+    EvalUpdate:
+      type: object
+      description: Fields that can be updated in an eval
+      properties:
+        name:
+          type: string
+          description: Name of the evaluation
+          example: "Enhanced Quality Score"
+        context:
+          type: string
+          description: What data the eval receives
+          example: "variables_values"
+        ranges:
+          type: array
+          description: Updated score ranges for Numeric evaluations
+          items:
+            $ref: '#/components/schemas/NumericRange'
+        fail_on_positive:
+          type: boolean
+          description: Updated fail_on_positive for Binary evaluations
+          example: false
+
+    Eval:
+      type: object
+      required:
+        - object
+        - id
+        - experiment_id
+        - notebook_id
+        - name
+        - eval_type
+        - context
+        - prompt
+        - _links
+      properties:
+        object:
+          type: string
+          enum: [eval]
+          example: "eval"
+        id:
+          type: string
+          description: Unique identifier for the eval (format eval-{uuid})
+          example: "eval-2b0e8263-ef2a-4abd-9e2f-cf6afed47c38"
+        experiment_id:
+          type: string
+          description: ID of the associated experiment
+          example: "exp_1234567890abcdef"
+        notebook_id:
+          type: string
+          description: ID of the associated notebook
+          example: "nb_1234567890abcdef"
+        name:
+          type: string
+          description: Name of the evaluation
+          example: "Response Quality Score"
+        description:
+          type: string
+          description: Optional description of the evaluation
+          example: "Evaluates response quality on a 0-10 scale"
+        eval_type:
+          type: string
+          description: Type of evaluation
+          enum: [Numeric, Binary]
+          example: "Numeric"
+        context:
+          type: string
+          description: What data the eval receives for validation
+          example: "response"
+        prompt:
+          type: string
+          description: The prompt used for evaluation
+          example: "Rate the quality of this response on a scale of 0-10"
+        ranges:
+          type: array
+          description: Score ranges for Numeric evaluations (only present when eval_type is Numeric)
+          items:
+            $ref: '#/components/schemas/NumericRange'
+        fail_on_positive:
+          type: boolean
+          description: For Binary evaluations - if true, "yes" responses indicate failure (only present when eval_type is Binary)
+          example: true
+        _links:
+          type: object
+          properties:
+            self:
+              type: object
+              properties:
+                href:
+                  type: string
+                  example: "/v1/notebooks/nb_1234567890abcdef/experiments/exp_1234567890abcdef/evals/eval-2b0e8263-ef2a-4abd-9e2f-cf6afed47c38"
+
+    # Error schemas
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Resource not found"
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            validation_error:
+              summary: Validation error
+              value:
+                error: "Missing required field: name"
+
+    Forbidden:
+      description: Forbidden - insufficient permissions or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            auth_error:
+              summary: Authentication error
+              value:
+                error: "Invalid API key"
+            permission_error:
+              summary: Permission error
+              value:
+                error: "Insufficient permissions to create experiments in notebook nb_123"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            notebook_not_found:
+              summary: Notebook not found
+              value:
+                error: "Notebook nb_123 not found"
+            experiment_not_found:
+              summary: Experiment not found
+              value:
+                error: "Experiment exp_123 not found"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            server_error:
+              summary: Internal server error
+              value:
+                error: "Internal server error"
+
+tags:
+  - name: Notebooks
+    description: Operations for managing notebooks - containers for organizing datasets and experiments
+  - name: Datasets
+    description: Operations for managing datasets - collections of data that can be global or notebook-scoped
+  - name: Experiments
+    description: Operations for managing experiments - AI/ML experiments that can reference dataset variables in prompts
+  - name: Runs
+    description: Operations for executing experiments and tracking run results
+  - name: Evals
+    description: Operations for managing evaluation configurations - define how experiment runs should be validated
