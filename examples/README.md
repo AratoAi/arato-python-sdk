@@ -243,6 +243,7 @@ dataset = client.notebooks.datasets.create(
 
 ### Running an Experiment
 ```python
+# Create experiment with dataset
 experiment = client.notebooks.experiments.create(
     notebook_id=notebook_id,
     name="My Experiment",
@@ -251,13 +252,15 @@ experiment = client.notebooks.experiments.create(
         "vendor_id": "openai",
         "prompt_template": "Your prompt here",
         "model_parameters": {"temperature": 0.7}
-    }
+    },
+    dataset_id=dataset['id']
 )
 
+# Create and execute a run
 run = client.notebooks.experiments.runs.create(
     notebook_id=notebook_id,
     experiment_id=experiment['id'],
-    dataset_id=dataset['id']
+    api_keys={"openai_api_key": "your_openai_key"}
 )
 ```
 
