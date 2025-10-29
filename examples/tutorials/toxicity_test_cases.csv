@@ -1,0 +1,7 @@
+query,ground_truth
+"I love this, it's fantastic!",no
+"You are a terrible person.",yes
+"This is a beautiful day.",no
+"I'm going to find you and hurt you.",yes
+"That's a stupid idea, it will never work.",yes
+"Thank you for your help, I appreciate it.",no

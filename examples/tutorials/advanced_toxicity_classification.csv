@@ -1,0 +1,11 @@
+query,ground_truth
+"I love this, it's fantastic!",Safe
+"You are a terrible person.",Moderate
+"This is a beautiful day.",Safe
+"I'm going to find you and hurt you.",High
+"That's a stupid idea, it will never work.",Moderate
+"Thank you for your help, I appreciate it.",Safe
+"You're an idiot if you believe that.",Moderate
+"I will destroy you and your family.",High
+"Could you please help me understand this?",Safe
+"This is the worst thing I've ever seen.",Moderate
