@@ -1,10 +1,10 @@
 """Unit tests for notebook resource operations."""
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 import httpx
 
 from arato_client import AratoClient, AsyncAratoClient
-from arato_client.exceptions import AratoAPIError, NotFoundError, AuthenticationError
+from arato_client.exceptions import AratoAPIError
 
 
 @pytest.fixture

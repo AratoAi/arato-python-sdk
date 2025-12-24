@@ -31,7 +31,6 @@ except Exception as e:
     print(f"Expected error: {e}")
 
 # Example 3: Using async client
-import asyncio
 from arato_client import AsyncAratoClient
 
 
