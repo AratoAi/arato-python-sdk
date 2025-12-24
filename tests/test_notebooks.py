@@ -23,14 +23,6 @@ def mock_async_client():
     return client
 
 
-@pytest.fixture
-def mock_response():
-    """Create a mock HTTP response."""
-    response = Mock(spec=httpx.Response)
-    response.status_code = 200
-    return response
-
-
 class TestNotebooksResource:
     """Tests for synchronous notebook operations."""
 
