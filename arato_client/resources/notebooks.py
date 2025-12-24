@@ -64,6 +64,27 @@ class NotebooksResource(BaseResource):
         """
         return self._get(f"/notebooks/{notebook_id}")
 
+    def delete(self, notebook_id: str) -> None:
+        """
+        Delete a specific notebook by ID.
+
+        Requires Owner or Editor permissions.
+
+        Warning:
+            This operation will delete:
+            - The notebook itself
+            - All experiments within the notebook
+            - All datasets scoped to the notebook
+            - All runs and evaluations associated with the notebook's experiments
+
+        Args:
+            notebook_id: The unique identifier for the notebook.
+
+        Returns:
+            None
+        """
+        self._delete(f"/notebooks/{notebook_id}")
+
 
 class AsyncNotebooksResource(AsyncBaseResource):
     """Handles async operations related to notebooks."""
@@ -118,3 +139,24 @@ class AsyncNotebooksResource(AsyncBaseResource):
             The notebook object.
         """
         return await self._get(f"/notebooks/{notebook_id}")
+
+    async def delete(self, notebook_id: str) -> None:
+        """
+        Delete a specific notebook by ID.
+
+        Requires Owner or Editor permissions.
+
+        Warning:
+            This operation will delete:
+            - The notebook itself
+            - All experiments within the notebook
+            - All datasets scoped to the notebook
+            - All runs and evaluations associated with the notebook's experiments
+
+        Args:
+            notebook_id: The unique identifier for the notebook.
+
+        Returns:
+            None
+        """
+        await self._delete(f"/notebooks/{notebook_id}")

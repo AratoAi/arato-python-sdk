@@ -28,6 +28,10 @@ class BaseResource:
         _handle_api_error(response)
         return response.json()
 
+    def _delete(self, path: str) -> None:
+        response = self._client._request("DELETE", path) # pylint: disable=protected-access
+        _handle_api_error(response)
+
 
 class AsyncBaseResource:
     """Async base class for all API resource clients."""
@@ -49,3 +53,7 @@ class AsyncBaseResource:
         response = await self._client._request("PUT", path, json=json) # pylint: disable=protected-access
         _handle_api_error(response)
         return response.json()
+
+    async def _delete(self, path: str) -> None:
+        response = await self._client._request("DELETE", path) # pylint: disable=protected-access
+        _handle_api_error(response)
