@@ -70,7 +70,7 @@ class TestAratoClient:
         mock_response = Mock(spec=httpx.Response)
         mock_response.status_code = 200
         mock_response.json.return_value = {"data": "test"}
-        mock_http_instance.request.return_value = mock_response
+        mock_http_instance.request = Mock(return_value=mock_response)
         
         client = AratoClient(api_key="test_key")
         response = client._request("GET", "/test")

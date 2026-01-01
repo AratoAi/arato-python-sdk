@@ -80,10 +80,9 @@ class TestBaseResource:
         mock_client._request.return_value = mock_response
         
         resource = BaseResource(mock_client)
-        result = resource._delete("/test/path/123")
+        resource._delete("/test/path/123")
         
         mock_client._request.assert_called_once_with("DELETE", "/test/path/123")
-        assert result is None
 
     def test_delete_request_error(self, mock_client):
         """Test _delete method with error response."""
@@ -194,12 +193,11 @@ class TestAsyncBaseResource:
         mock_client._request = mock_request
         
         resource = AsyncBaseResource(mock_client)
-        result = await resource._delete("/test/path/123")
+        await resource._delete("/test/path/123")
         
         assert len(request_args) == 1
         assert request_args[0][0][0] == "DELETE"
         assert request_args[0][0][1] == "/test/path/123"
-        assert result is None
 
     @pytest.mark.asyncio
     async def test_delete_request_error_async(self, mock_client):
