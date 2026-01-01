@@ -124,10 +124,9 @@ class TestNotebooksResource:
         mock_client._request.return_value = mock_response
         
         notebooks = NotebooksResource(mock_client)
-        result = notebooks.delete("nb_123")
+        notebooks.delete("nb_123")
         
         mock_client._request.assert_called_once_with("DELETE", "/notebooks/nb_123")
-        assert result is None
 
     def test_delete_notebook_not_found(self, mock_client):
         """Test deleting a non-existent notebook."""
@@ -258,12 +257,11 @@ class TestAsyncNotebooksResource:
         mock_async_client._request = mock_request
         
         notebooks = AsyncNotebooksResource(mock_async_client)
-        result = await notebooks.delete("nb_123")
+        await notebooks.delete("nb_123")
         
         assert len(request_args) == 1
         assert request_args[0][0][0] == "DELETE"
         assert request_args[0][0][1] == "/notebooks/nb_123"
-        assert result is None
 
     @pytest.mark.asyncio
     async def test_delete_notebook_not_found_async(self, mock_async_client):

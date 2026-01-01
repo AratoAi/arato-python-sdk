@@ -1785,11 +1785,21 @@ components:
           type: string
           description: Name of the evaluation
           example: "Response Quality Score"
+        description:
+          type: string
+          description: Optional description of the evaluation
+          example: "Evaluates response quality on a 0-10 scale"
         eval_type:
           type: string
           description: Type of evaluation
-          enum: [Numeric, Binary]
+          enum: [Numeric, Binary, Classification, Similarity]
           example: "Numeric"
+        prompt:
+          type: string
+          description: |
+            The prompt used for evaluation (required for Numeric, Binary, and Classification eval types).
+            Not used for Similarity evaluations.
+          example: "Rate the quality of this response on a scale of 0-10"
         context:
           type: string
           description: |
@@ -1807,6 +1817,46 @@ components:
           type: boolean
           description: For Binary evaluations - if true, "yes" responses indicate failure (required for eval_type=Binary)
           example: true
+        classes:
+          type: array
+          description: Classification classes for Classification evaluations (required for eval_type=Classification)
+          items:
+            type: object
+            required:
+              - title
+              - is_pass
+            properties:
+              title:
+                type: string
+                description: Classification class name
+                example: "positive"
+              description:
+                type: string
+                description: Optional description of the class
+                example: "Positive sentiment responses"
+              is_pass:
+                type: boolean
+                description: Whether this class is considered passing
+                example: true
+        validator_type:
+          type: string
+          description: Similarity algorithm type (required for eval_type=Similarity)
+          enum: [cosine, jaccard]
+          default: cosine
+          example: "cosine"
+        threshold:
+          type: number
+          description: Similarity threshold percentage (0-100) for passing evaluation (required for eval_type=Similarity)
+          minimum: 0
+          maximum: 100
+          default: 70.0
+          example: 80.0
+        compare_to_field:
+          type: string
+          description: |
+            Field name to compare against for Similarity evaluations (required for eval_type=Similarity).
+            Common values: expected_response, expected_output, or any custom field from your dataset.
+          example: "expected_response"
 
     EvalUpdate:
       type: object
@@ -1816,6 +1866,10 @@ components:
           type: string
           description: Name of the evaluation
           example: "Enhanced Quality Score"
+        description:
+          type: string
+          description: Description of the evaluation
+          example: "Updated evaluation description"
         context:
           type: string
           description: What data the eval receives
@@ -1829,6 +1883,36 @@ components:
           type: boolean
           description: Updated fail_on_positive for Binary evaluations
           example: false
+        classes:
+          type: array
+          description: Updated classes for Classification evaluations
+          items:
+            type: object
+            required:
+              - title
+              - is_pass
+            properties:
+              title:
+                type: string
+              description:
+                type: string
+              is_pass:
+                type: boolean
+        validator_type:
+          type: string
+          description: Updated similarity algorithm type
+          enum: [cosine, jaccard]
+          example: "jaccard"
+        threshold:
+          type: number
+          description: Updated similarity threshold
+          minimum: 0
+          maximum: 100
+          example: 85.0
+        compare_to_field:
+          type: string
+          description: Updated field to compare against
+          example: "expected_output"
 
     Eval:
       type: object
@@ -1840,7 +1924,6 @@ components:
         - name
         - eval_type
         - context
-        - prompt
         - _links
       properties:
         object:
@@ -1870,7 +1953,7 @@ components:
         eval_type:
           type: string
           description: Type of evaluation
-          enum: [Numeric, Binary]
+          enum: [Numeric, Binary, Classification, Similarity]
           example: "Numeric"
         context:
           type: string
@@ -1878,7 +1961,7 @@ components:
           example: "response"
         prompt:
           type: string
-          description: The prompt used for evaluation
+          description: The prompt used for evaluation (not present for Similarity evaluations)
           example: "Rate the quality of this response on a scale of 0-10"
         ranges:
           type: array
@@ -1889,6 +1972,34 @@ components:
           type: boolean
           description: For Binary evaluations - if true, "yes" responses indicate failure (only present when eval_type is Binary)
           example: true
+        classes:
+          type: array
+          description: Classification classes (only present when eval_type is Classification)
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                example: "positive"
+              description:
+                type: string
+                example: "Positive sentiment responses"
+              is_pass:
+                type: boolean
+                example: true
+        validator_type:
+          type: string
+          description: Similarity algorithm type (only present when eval_type is Similarity)
+          enum: [cosine, jaccard]
+          example: "cosine"
+        threshold:
+          type: number
+          description: Similarity threshold percentage (only present when eval_type is Similarity)
+          example: 80.0
+        compare_to_field:
+          type: string
+          description: Field to compare against (only present when eval_type is Similarity)
+          example: "expected_response"
         _links:
           type: object
           properties:

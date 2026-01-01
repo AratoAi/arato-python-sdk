@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "arato-client"
 # IMPORTANT: Before every new upload, you must increment this version number!
-version = "1.0.9" 
+version = "1.0.10" 
 description = "The official Python Client for the Arato API for testing, experimenting, and evaluating LLM-based applications."
 readme = "README.md" # This tells setuptools to use your README for the long description on PyPI
 authors = [

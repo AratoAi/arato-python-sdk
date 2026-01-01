@@ -97,7 +97,35 @@ python examples/experiments_and_runs.py
 
 ---
 
-### 4. **async_usage.py** - Asynchronous Operations
+### 4. **similarity_eval_example.py** - Similarity Evaluations
+**What it demonstrates:**
+- Creating Similarity evaluations
+- Comparing AI outputs to expected results
+- Using cosine and jaccard similarity algorithms
+- Setting similarity thresholds for pass/fail criteria
+
+**When to use:**
+- Testing Q&A systems against expected answers
+- Measuring semantic similarity of responses
+- Validating AI output consistency
+- Quality assurance for generated content
+
+**Run it:**
+```bash
+python examples/similarity_eval_example.py
+```
+
+**Key concepts:**
+- Similarity eval types (cosine, jaccard)
+- Threshold configuration (0-100%)
+- Comparing responses to dataset fields
+- Semantic similarity scoring
+
+**Note:** Verify your Arato API version supports Similarity evaluations.
+
+---
+
+### 5. **async_usage.py** - Asynchronous Operations
 **What it demonstrates:**
 - Using AsyncAratoClient for concurrent operations
 - Batch creating resources in parallel
